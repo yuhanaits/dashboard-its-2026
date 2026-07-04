@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ITS EPCC 2026 — Executive Performance Command Center</title>
+<style>
+:root{
+  --navy:#0B2A4A; --navy2:#123A63; --steel:#1D5C99; --sky:#BFD7EE;
+  --paper:#F4F7FB; --card:#FFFFFF; --ink:#17222E; --mut:#5B6B7C; --line:#DCE5F0;
+  --ok:#1E8E5A; --ok-bg:#E4F4EC; --warn:#C98A00; --warn-bg:#FCF3DC; --bad:#C9372C; --bad-bg:#FBE7E4;
+  --gold:#E0A526;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{font-size:15px}
+body{font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;background:var(--paper);color:var(--ink);line-height:1.45}
+.app{display:flex;min-height:100vh}
+/* ============ SIDEBAR ============ */
+.side{width:222px;background:var(--navy);color:#DCE8F5;flex-shrink:0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.brand{padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,.12)}
+.brand .eyebrow{font-size:.62rem;letter-spacing:.22em;text-transform:uppercase;color:#8FB3D9}
+.brand h1{font-size:1.05rem;font-weight:700;color:#fff;margin-top:4px;line-height:1.25}
+.brand .sub{font-size:.68rem;color:#9FB8D2;margin-top:4px}
+.nav{flex:1;overflow-y:auto;padding:10px 0}
+.nav button{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;color:#C4D6EA;padding:10px 16px;font:inherit;font-size:.85rem;cursor:pointer;text-align:left;border-left:3px solid transparent}
+.nav button:hover{background:rgba(255,255,255,.06);color:#fff}
+.nav button.on{background:rgba(255,255,255,.1);color:#fff;border-left-color:var(--gold);font-weight:600}
+.nav .grp{font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:#6E8CAC;padding:14px 16px 4px}
+.nav .badge{margin-left:auto;background:var(--bad);color:#fff;border-radius:9px;font-size:.65rem;padding:1px 7px;font-weight:700}
+.twbox{padding:12px 16px;border-top:1px solid rgba(255,255,255,.12)}
+.twbox label{font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:#8FB3D9;display:block;margin-bottom:6px}
+.twseg{display:flex;gap:4px}
+.twseg button{flex:1;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#C4D6EA;border-radius:6px;padding:6px 0;font:inherit;font-size:.78rem;cursor:pointer}
+.twseg button.on{background:var(--gold);border-color:var(--gold);color:#1F1500;font-weight:700}
+.iobox{padding:10px 16px 16px;display:flex;gap:6px}
+.iobox button{flex:1;background:none;border:1px solid rgba(255,255,255,.25);color:#C4D6EA;border-radius:6px;padding:5px 0;font-size:.7rem;cursor:pointer}
+.iobox button:hover{border-color:#fff;color:#fff}
+/* ============ MAIN ============ */
+.main{flex:1;min-width:0;padding:22px 26px 60px}
+.pagehead{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.pagehead h2{font-size:1.35rem;font-weight:700;color:var(--navy)}
+.pagehead .meta{font-size:.78rem;color:var(--mut)}
+.note{font-size:.78rem;color:var(--mut);margin:-8px 0 14px}
+/* cockpit strip */
+.cockpit{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:18px}
+.tile{background:var(--navy);border-radius:10px;padding:13px 14px;color:#fff;position:relative;overflow:hidden}
+.tile .lamp{position:absolute;top:11px;right:11px;width:13px;height:13px;border-radius:50%;box-shadow:0 0 8px 2px currentColor}
+.tile .lamp.ok{background:#38D189;color:#38D189}.tile .lamp.warn{background:#FFC53D;color:#FFC53D}.tile .lamp.bad{background:#FF6B5B;color:#FF6B5B}
+.tile .lamp.na{background:#51708F;color:transparent;box-shadow:none}
+.tile .tl{font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:#9FC0E2}
+.tile .tv{font-size:1.5rem;font-weight:700;margin-top:2px;line-height:1.1}
+.tile .ts{font-size:.7rem;color:#BCD3EA;margin-top:3px}
+/* cards & tables */
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:16px}
+.card h3{font-size:.95rem;color:var(--navy);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.card h3 .k{font-size:.6rem;letter-spacing:.16em;text-transform:uppercase;background:var(--sky);color:var(--navy);padding:2px 8px;border-radius:4px;font-weight:700}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:1100px){.grid2{grid-template-columns:1fr}}
+table{width:100%;border-collapse:collapse;font-size:.8rem}
+th{background:#EDF3FA;color:var(--navy);text-align:left;padding:7px 9px;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:2px solid var(--line);white-space:nowrap}
+td{padding:7px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:hover td{background:#F7FAFD}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+td.ctr,th.ctr{text-align:center}
+.pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.68rem;font-weight:700;white-space:nowrap}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}.pill.warn{background:var(--warn-bg);color:var(--warn)}.pill.bad{background:var(--bad-bg);color:var(--bad)}.pill.na{background:#EEF1F5;color:var(--mut)}
+.bar{height:7px;background:#E8EEF6;border-radius:4px;overflow:hidden;min-width:70px}
+.bar i{display:block;height:100%;border-radius:4px}
+.bar i.ok{background:var(--ok)}.bar i.warn{background:var(--gold)}.bar i.bad{background:var(--bad)}
+input[type=number],input[type=text],input[type=date],select,textarea{font:inherit;font-size:.8rem;padding:5px 8px;border:1px solid #C6D3E2;border-radius:6px;background:#fff;color:var(--ink)}
+input[type=number]{width:96px;text-align:right}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--steel);outline-offset:0;border-color:var(--steel)}
+.btn{font:inherit;font-size:.78rem;font-weight:600;padding:7px 14px;border-radius:7px;border:1px solid var(--steel);background:var(--steel);color:#fff;cursor:pointer}
+.btn:hover{background:var(--navy2)}
+.btn.ghost{background:#fff;color:var(--steel)}
+.btn.sm{padding:4px 10px;font-size:.72rem}
+.btn.danger{background:#fff;border-color:var(--bad);color:var(--bad)}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.filters .chip{font-size:.74rem;padding:4px 12px;border-radius:20px;border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--mut)}
+.filters .chip.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.subseg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:14px}
+.subseg button{font:inherit;font-size:.78rem;padding:7px 16px;border:0;background:#fff;color:var(--mut);cursor:pointer}
+.subseg button.on{background:var(--navy);color:#fff;font-weight:600}
+.help{font-size:.72rem;color:var(--mut)}
+.savestate{position:fixed;bottom:14px;right:18px;background:var(--navy);color:#fff;font-size:.72rem;padding:6px 14px;border-radius:20px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:50}
+.savestate.show{opacity:.92}
+.kpi-detail{background:#F2F7FC;border:1px solid var(--sky);border-radius:8px;padding:12px 14px;margin-top:8px;font-size:.8rem}
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:.76rem}
+.flow .node{background:#fff;border:1px solid var(--line);border-radius:7px;padding:5px 10px}
+.flow .node.hd{background:var(--navy);color:#fff;border-color:var(--navy);font-weight:600}
+.flow .arr{color:var(--mut)}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+.empty{padding:22px;text-align:center;color:var(--mut);font-size:.82rem}
+/* brief / print */
+.brief{background:#fff;border:1px solid var(--line);border-radius:10px;padding:30px 36px;max-width:900px}
+.brief h2{color:var(--navy);font-size:1.3rem;border-bottom:3px solid var(--gold);padding-bottom:8px;margin-bottom:4px}
+.brief .bmeta{font-size:.75rem;color:var(--mut);margin-bottom:16px}
+.brief h4{color:var(--navy);font-size:.9rem;margin:16px 0 6px;letter-spacing:.04em;text-transform:uppercase}
+.brief ul{padding-left:20px;font-size:.83rem}
+.brief li{margin-bottom:4px}
+@media print{
+  .side,.savestate,.noprint{display:none!important}
+  .main{padding:0}
+  body{background:#fff}
+  .brief{border:0;padding:0;max-width:none}
+  .card{break-inside:avoid}
+}
+@media(max-width:820px){
+  .app{flex-direction:column}
+  .side{width:100%;height:auto;position:static}
+  .nav{display:flex;flex-wrap:wrap}
+  .nav button{width:auto;border-left:0;border-bottom:3px solid transparent}
+  .nav button.on{border-bottom-color:var(--gold)}
+  .nav .grp{display:none}
+}
+/* ============ LOGIN ============ */
+.lock{position:fixed;inset:0;background:linear-gradient(160deg,#081F38 0%,#123A63 100%);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
+.lockcard{background:#fff;border-radius:14px;padding:30px 32px;max-width:430px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.lockcard .eyebrow{font-size:.62rem;letter-spacing:.22em;text-transform:uppercase;color:var(--steel)}
+.lockcard h2{color:var(--navy);font-size:1.15rem;margin:4px 0 4px}
+.lockcard p{font-size:.78rem;color:var(--mut);margin-bottom:14px}
+.lockcard label{display:block;font-size:.72rem;font-weight:600;color:var(--navy);margin:10px 0 4px}
+.lockcard input{width:100%;padding:9px 11px;font-size:.9rem}
+.lockcard .btn{width:100%;margin-top:16px;padding:10px}
+.lockcard .err{color:var(--bad);font-size:.75rem;margin-top:10px;min-height:1em}
+.lockcard .foot{margin-top:14px;font-size:.7rem;color:var(--mut);text-align:center}
+.lockcard .foot a{color:var(--steel);cursor:pointer;text-decoration:underline}
+.rolebadge{display:inline-block;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;padding:2px 8px;border-radius:4px;font-weight:700;margin-top:6px}
+.rolebadge.admin{background:var(--gold);color:#1F1500}
+.rolebadge.viewer{background:var(--sky);color:var(--navy)}
+body.ro #main input:not(.keep),body.ro #main select,body.ro #main textarea{background:#F0F3F7;pointer-events:none;border-color:var(--line)}
+body.ro .mut{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side noprint">
+    <div class="brand">
+      <div class="eyebrow">Institut Teknologi Sepuluh Nopember</div>
+      <h1>Executive Performance Command Center</h1>
+      <div class="sub">RKAT & Kinerja ITS 2026 · Rp<span id="brandTotal"></span></div>
+      <div id="roleBadge"></div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="twbox">
+      <label>Periode Monitoring</label>
+      <div class="twseg" id="twseg"></div>
+    </div>
+    <div class="iobox">
+      <button onclick="exportData()">⭳ Ekspor</button>
+      <button onclick="importData()">⭱ Impor</button>
+      <button onclick="logout()">⎋ Keluar</button>
+    </div>
+  </aside>
+  <main class="main" id="main"></main>
+</div>
+<div class="savestate" id="savestate">Tersimpan ✓</div>
+<input type="file" id="importfile" accept=".json" style="display:none">
+<script>
+const DATA = {"TOTAL":2390653926102,"IKU":[{"id":"U1","sasaran":"Talenta","group":"IKU 1 (Wajib)","name":"Angka Efisiensi Edukasi Perguruan Tinggi (AEE PT)","satuan":"%","baseline":"54,10","target":"55,70","b":54.1,"t":55.7,"dir":1},{"id":"U2","sasaran":"Talenta","group":"IKU 1 (Wajib)","name":"Persentase mahasiswa pascasarjana terhadap total mahasiswa","satuan":"%","baseline":"16,68","target":"18,68","b":16.68,"t":18.68,"dir":1},{"id":"U3","sasaran":"Talenta","group":"IKU 1 (Wajib)","name":"Persentase mahasiswa internasional","satuan":"%","baseline":"5,55","target":"7,00","b":5.55,"t":7,"dir":1},{"id":"U4","sasaran":"Talenta","group":"IKU 2 (Wajib)","name":"Persentase lulusan pendidikan tinggi yang langsung bekerja, berwirausaha, atau melanjutkan studi dalam jangka waktu 1 (satu) tahun setelah kelulusan, serta sudah bekerja atau berwirausaha sebelum lulus kuliah","satuan":"%","baseline":"80,00","target":"80,00","b":80,"t":80,"dir":1},{"id":"U5","sasaran":"Talenta","group":"IKU 3 (Wajib)","name":"Persentase mahasiswa program Diploma dan Sarjana yang berkegiatan/meraih prestasi di luar program studi","satuan":"%","baseline":"18,46","target":"30,00","b":18.46,"t":30,"dir":1},{"id":"U6","sasaran":"Inovasi","group":"IKU 4 (Pilihan)","name":"Persentase dosen perguruan tinggi yang mendapatkan rekognisi internasional atau hasil penelitiannya diterapkan oleh masyarakat","satuan":"%","baseline":"71,28","target":"73,00","b":71.28,"t":73,"dir":1},{"id":"U7","sasaran":"Inovasi","group":"IKU 5 (Wajib)","name":"Persentase luaran hasil kerja sama dan hilirisasi antara perguruan tinggi dan industri/lembaga","satuan":"%","baseline":"3,00","target":"5,00","b":3,"t":5,"dir":1},{"id":"U8","sasaran":"Inovasi","group":"IKU 6 (Wajib)","name":"Persentase publikasi bereputasi internasional (Scopus/WoS)","satuan":"%","baseline":"65,57","target":"66,00","b":65.57,"t":66,"dir":1},{"id":"U9","sasaran":"Inovasi","group":"IKU 6 (Wajib)","name":"Total publikasi internasional","satuan":"Artikel","baseline":"2.432","target":"2.675","b":2432,"t":2675,"dir":1},{"id":"U10","sasaran":"Inovasi","group":"IKU 6 (Wajib)","name":"Rasio jumlah publikasi bersama (co-authorship) internasional akumulatif per jumlah dosen","satuan":"Rasio","baseline":"0,2093","target":"0,2612","b":0.2093,"t":0.2612,"dir":1},{"id":"U11","sasaran":"Inovasi","group":"IKU Partisipatif","name":"Rasio jumlah sitasi dari publikasi internasional terindeks Scopus per jumlah dosen","satuan":"Rasio","baseline":"115,36","target":"130,20","b":115.36,"t":130.2,"dir":1},{"id":"U12","sasaran":"Kontribusi/Dedikasi pada Masyarakat","group":"IKU 7 (Wajib)","name":"Persentase keterlibatan perguruan tinggi dalam SDG 4 (Pendidikan Berkualitas), SDG 17 (Kemitraan), SDG 1 (Tanpa Kemiskinan), dan 2 (dua) SDGs lain sesuai keunggulan","satuan":"%","baseline":"75,00","target":"80,00","b":75,"t":80,"dir":1},{"id":"U13","sasaran":"Kontribusi/Dedikasi pada Masyarakat","group":"IKU 7 (Wajib)","name":"Peringkat PT pada QS World University Ranking","satuan":"Peringkat","baseline":"509","target":"480","b":509,"t":480,"dir":-1},{"id":"U_THE","sasaran":"Kontribusi/Dedikasi pada Masyarakat","group":"IKU 7 (Wajib)","name":"Peringkat PT pada THE Impact Ranking","satuan":"Peringkat","baseline":"201–300","target":"201–300","b":null,"t":null,"dir":-1},{"id":"U15","sasaran":"Kontribusi/Dedikasi pada Masyarakat","group":"IKU 8 (Pilihan)","name":"Persentase Sumber Daya Manusia (SDM) perguruan tinggi yang terlibat langsung dalam penyusunan kebijakan (nasional/daerah/industri)","satuan":"%","baseline":"33,00","target":"34,00","b":33,"t":34,"dir":1},{"id":"U16","sasaran":"Tata Kelola Berintegritas","group":"IKU 9 (Wajib)","name":"Persentase pendapatan non pendidikan/UKT terhadap total pendapatan","satuan":"%","baseline":"–","target":"35,00","b":null,"t":35,"dir":1},{"id":"U17","sasaran":"Tata Kelola Berintegritas","group":"IKU 10 (Pilihan)","name":"Zona Integritas yang terdiri dari Wilayah Bebas dari Korupsi (WBK) dan Wilayah Birokrasi Bersih dan Melayani (WBBM)","satuan":"Unit Kerja","baseline":"9","target":"9","b":9,"t":9,"dir":1},{"id":"U18","sasaran":"Tata Kelola Berintegritas","group":"IKU 11 (Pilihan)","name":"Opini atas hasil audit Laporan Keuangan Perguruan Tinggi","satuan":"Opini","baseline":"WTP","target":"WTP","b":null,"t":null,"dir":1},{"id":"U19","sasaran":"Tata Kelola Berintegritas","group":"IKU 11 (Pilihan)","name":"Predikat Sistem Akuntabilitas Kinerja Instansi Pemerintah (SAKIP) Perguruan Tinggi","satuan":"Predikat","baseline":"A","target":"AA","b":null,"t":null,"dir":1},{"id":"U20","sasaran":"Tata Kelola Berintegritas","group":"IKU 11 (Pilihan)","name":"Pencegahan dan Penanganan Pelanggaran Integritas Akademik","satuan":"Laporan","baseline":"0","target":"0","b":0,"t":0,"dir":1},{"id":"U21","sasaran":"Tata Kelola Berintegritas","group":"IKU 11 (Pilihan)","name":"Pencegahan dan Penanganan Anti Kekerasan; Anti Narkotika, Psikotropika dan Bahan Adiktif Berbahaya lainnya (narkoba); dan Anti Korupsi","satuan":"%","baseline":"100","target":"100","b":100,"t":100,"dir":1},{"id":"U22","sasaran":"Tata Kelola Berintegritas","group":"IKU 12 (Wajib)","name":"Ketersediaan perencanaan strategis peningkatan kesejahteraan dosen","satuan":"Dokumen","baseline":"–","target":"3","b":null,"t":3,"dir":1},{"id":"U23","sasaran":"Tata Kelola Berintegritas","group":"IKU 13 (Wajib)","name":"Nilai Kinerja Anggaran atas Pelaksanaan RKA-K/L","satuan":"Nilai","baseline":"87,50","target":"87,50","b":87.5,"t":87.5,"dir":1}],"IKS":[{"id":"IKS 1","tema":"R","name":"Persentase publikasi bereputasi internasional (Scopus/WoS) (IKU)","jenis":"IKU","baseline":"65,57%","target":"66%","b":65.57,"t":66,"dir":1,"qs":"CPF, Academic Reputation","the":"Research Quality","gm":"–","pic":"DRPM"},{"id":"IKS 2","tema":"R","name":"Rasio jumlah sitasi dari publikasi internasional terindeks Scopus per jumlah dosen","jenis":"IKE","baseline":"115,36","target":"130,20","b":115.36,"t":130.2,"dir":1,"qs":"Citations per Faculty (CPF)","the":"Research Quality","gm":"–","pic":"DRPM"},{"id":"IKS 3","tema":"R","name":"Total publikasi internasional","jenis":"IKP","baseline":"2.432","target":"2.675","b":2432,"t":2675,"dir":1,"qs":"CPF, Academic Reputation","the":"Research Quality","gm":"✔","pic":"DRPM"},{"id":"IKS 4","tema":"R","name":"Persentase publikasi Top Tier terhadap total publikasi internasional","jenis":"IKP","baseline":"9,99%","target":"10,00%","b":9.99,"t":10,"dir":1,"qs":"CPF","the":"Research Quality","gm":"–","pic":"DRPM"},{"id":"IKS 5","tema":"R","name":"Persentase publikasi Q1 terhadap total publikasi internasional","jenis":"IKP","baseline":"20,81%","target":"25,00%","b":20.81,"t":25,"dir":1,"qs":"CPF","the":"Research Quality","gm":"–","pic":"DRPM"},{"id":"IKS 6","tema":"R","name":"Rasio jumlah publikasi bersama (co-authorship) internasional akumulatif / jumlah dosen","jenis":"IKE","baseline":"0,2093","target":"0,2612","b":0.2093,"t":0.2612,"dir":1,"qs":"International Research Network","the":"International Outlook, Research Quality","gm":"–","pic":"DRPM / DKG"},{"id":"IKS 7","tema":"R","name":"Nilai H-Index Scopus dosen","jenis":"IKE","baseline":"5,66","target":"5,79","b":5.66,"t":5.79,"dir":1,"qs":"CPF, Academic Reputation","the":"Research Quality","gm":"–","pic":"DRPM"},{"id":"IKS 8","tema":"R","name":"Rasio jumlah judul penelitian / jumlah dosen","jenis":"IKE","baseline":"1,90","target":"2,00","b":1.9,"t":2,"dir":1,"qs":"Academic Reputation","the":"Research Quality","gm":"–","pic":"DRPM"},{"id":"IKS 9","tema":"R","name":"Rasio jumlah anggaran riset / jumlah anggaran total","jenis":"IKE","baseline":"15%","target":"16%","b":15,"t":16,"dir":1,"qs":"–","the":"Research Quality","gm":"–","pic":"DRPM"},{"id":"IKS 10","tema":"R","name":"Persentase SDM perguruan tinggi yang terlibat langsung dalam penyusunan kebijakan (nasional/daerah/industri) (IKU)","jenis":"IKU","baseline":"33%","target":"34%","b":33,"t":34,"dir":1,"qs":"–","the":"Impact (SDGs)","gm":"–","pic":"DRPM"},{"id":"IKS 11","tema":"R","name":"Jumlah Pengabdian pada Masyarakat","jenis":"IKP","baseline":"289","target":"300","b":289,"t":300,"dir":1,"qs":"–","the":"Industry, Impact (SDGs)","gm":"✔","pic":"DRPM"},{"id":"IKS 12","tema":"A","name":"Persentase lulusan pendidikan tinggi yang langsung bekerja, berwirausaha, atau melanjutkan studi dalam jangka waktu 1 (satu) tahun setelah kelulusan, serta sudah bekerja atau berwirausaha sebelum lulus kuliah (IKU)","jenis":"IKU","baseline":"80%","target":"80%","b":80,"t":80,"dir":1,"qs":"Employer Reputation, Employment Outcomes","the":"Teaching","gm":"–","pic":"Dirmawa"},{"id":"IKS 13","tema":"A","name":"Angka Efisiensi Edukasi Perguruan Tinggi (AEE PT) (IKU)","jenis":"IKU","baseline":"54,1%","target":"55,7%","b":54.1,"t":55.7,"dir":1,"qs":"Faculty Student Ratio","the":"Teaching","gm":"–","pic":"DirPAIP"},{"id":"IKS 14","tema":"A","name":"Tingkat Pencapaian AEE D4","jenis":"IKP","baseline":"65,64%","target":"68,00%","b":65.64,"t":68,"dir":1,"qs":"Faculty Student Ratio","the":"Teaching","gm":"–","pic":"DirPAIP"},{"id":"IKS 15","tema":"A","name":"Tingkat Pencapaian AEE S1","jenis":"IKP","baseline":"57,12%","target":"60,00%","b":57.12,"t":60,"dir":1,"qs":"Faculty Student Ratio","the":"Teaching","gm":"–","pic":"DirPAIP"},{"id":"IKS 16","tema":"A","name":"Tingkat Pencapaian AEE S2","jenis":"IKP","baseline":"58,80%","target":"59,00%","b":58.8,"t":59,"dir":1,"qs":"Faculty Student Ratio","the":"Teaching","gm":"–","pic":"DirPPS"},{"id":"IKS 17","tema":"A","name":"Tingkat Pencapaian AEE S3","jenis":"IKP","baseline":"34,73%","target":"36,00%","b":34.73,"t":36,"dir":1,"qs":"Faculty Student Ratio","the":"Teaching","gm":"–","pic":"DirPPS"},{"id":"IKS 18","tema":"A","name":"Rasio jumlah mahasiswa pascasarjana / jumlah mahasiswa","jenis":"IKE","baseline":"0,1668","target":"0,1868","b":0.1668,"t":0.1868,"dir":1,"qs":"–","the":"Teaching","gm":"–","pic":"DirPPS"},{"id":"IKS 19","tema":"A","name":"Jumlah program studi terakreditasi internasional","jenis":"IKE","baseline":"45","target":"44","b":45,"t":44,"dir":1,"qs":"Academic Reputation","the":"Teaching","gm":"–","pic":"DirPAIP"},{"id":"IKS 20","tema":"A","name":"Rasio jumlah program studi terakreditasi A atau Unggul atau Internasional / jumlah total program studi yang sudah meluluskan","jenis":"IKE","baseline":"0,80","target":"0,81","b":0.8,"t":0.81,"dir":1,"qs":"Academic Reputation","the":"Teaching","gm":"–","pic":"DirPAIP"},{"id":"IKS 21","tema":"A","name":"Rasio jumlah program studi S3 / jumlah program studi S1","jenis":"IKE","baseline":"0,357","target":"0,375","b":0.357,"t":0.375,"dir":1,"qs":"–","the":"Teaching","gm":"–","pic":"DirPPS"},{"id":"IKS 22","tema":"A","name":"Rasio mahasiswa S1 dan D4 yang diterima dibanding jumlah peminat","jenis":"IKP","baseline":"0,110","target":"0,105","b":0.11,"t":0.105,"dir":1,"qs":"Academic Reputation","the":"–","gm":"–","pic":"DirPAIP (Admisi)"},{"id":"IKS 23","tema":"A","name":"Persentase mahasiswa program Diploma dan Sarjana yang berkegiatan/meraih prestasi di luar program studi (IKU)","jenis":"IKU","baseline":"18,46%","target":"30%","b":18.46,"t":30,"dir":1,"qs":"Employer Reputation","the":"Teaching","gm":"–","pic":"Dirmawa"},{"id":"IKS 24","tema":"A","name":"Jumlah mahasiswa yang mendapatkan layanan keberpihakan","jenis":"IKE","baseline":"5.160","target":"5.478","b":5160,"t":5478,"dir":1,"qs":"–","the":"Impact (SDG 4, SDG 10)","gm":"–","pic":"Dirmawa"},{"id":"IKS 25","tema":"A","name":"Persentase dosen perguruan tinggi yang mendapatkan rekognisi internasional atau hasil penelitiannya diterapkan oleh masyarakat (IKU)","jenis":"IKU","baseline":"71,28%","target":"73%","b":71.28,"t":73,"dir":1,"qs":"Academic Reputation","the":"Research Quality","gm":"–","pic":"DKG / DSDMO"},{"id":"IKS 26","tema":"A","name":"Jumlah kerja sama internasional pada tahun berjalan","jenis":"IKP","baseline":"125","target":"135","b":125,"t":135,"dir":1,"qs":"International Research Network","the":"International Outlook","gm":"–","pic":"DKG"},{"id":"IKS 27","tema":"A","name":"Rasio jumlah mahasiswa internasional full degree/non-degree terhadap total mahasiswa","jenis":"IKE","baseline":"5,55%","target":"7,00%","b":5.55,"t":7,"dir":1,"qs":"International Student Ratio","the":"International Outlook","gm":"–","pic":"DKG"},{"id":"IKS 28","tema":"A","name":"Jumlah dosen ITS yang menjadi keynote/invited speaker di event internasional","jenis":"IKP","baseline":"20","target":"23","b":20,"t":23,"dir":1,"qs":"Academic Reputation","the":"Research Quality","gm":"–","pic":"DKG"},{"id":"IKS 29","tema":"A","name":"Rasio jumlah dosen internasional / jumlah dosen","jenis":"IKE","baseline":"0,26","target":"0,26","b":0.26,"t":0.26,"dir":1,"qs":"International Faculty Ratio","the":"International Outlook","gm":"–","pic":"DKG / DSDMO"},{"id":"IKS 30","tema":"A","name":"Peringkat PT pada QS World University Ranking","jenis":"IKP","baseline":"509","target":"480","b":509,"t":480,"dir":-1,"qs":"Agregat seluruh indikator QS","the":"–","gm":"–","pic":"WR IV / DKG / KPM"},{"id":"IKS 31","tema":"I","name":"Persentase luaran hasil kerja sama dan hilirisasi antara perguruan tinggi dengan industri/lembaga (IKU)","jenis":"IKU","baseline":"3,00%","target":"5,00%","b":3,"t":5,"dir":1,"qs":"–","the":"Industry","gm":"–","pic":"DIKST"},{"id":"IKS 32","tema":"I","name":"Jumlah paten didaftarkan pada tahun berjalan","jenis":"IKP","baseline":"40","target":"50","b":40,"t":50,"dir":1,"qs":"–","the":"Industry (patents)","gm":"–","pic":"DIKST"},{"id":"IKS 33","tema":"I","name":"Jumlah pendapatan pemanfaatan dari kekayaan intelektual pada tahun berjalan (dalam Rp juta)","jenis":"IKP","baseline":"65","target":"80","b":65,"t":80,"dir":1,"qs":"–","the":"Industry","gm":"–","pic":"DIKST"},{"id":"IKS 34","tema":"I","name":"Jumlah start-up yang spin-off pada tahun berjalan","jenis":"IKP","baseline":"0","target":"1","b":0,"t":1,"dir":1,"qs":"–","the":"Industry","gm":"–","pic":"DIKST (Inkubator)"},{"id":"IKS 35","tema":"I","name":"Jumlah pendapatan kerja sama industri ITS (dalam Rp miliar)","jenis":"IKP","baseline":"240","target":"240","b":240,"t":240,"dir":1,"qs":"–","the":"Industry","gm":"–","pic":"DKPU"},{"id":"IKS 36","tema":"I","name":"Jumlah pendapatan unit usaha mandiri dan lainnya ITS (dalam Rp miliar)","jenis":"IKP","baseline":"43","target":"46,25","b":43,"t":46.25,"dir":1,"qs":"–","the":"–","gm":"–","pic":"DKPU"},{"id":"IKS 37","tema":"I","name":"Jumlah pendapatan anak usaha (dalam Rp miliar)","jenis":"IKP","baseline":"210","target":"250","b":210,"t":250,"dir":1,"qs":"–","the":"–","gm":"–","pic":"WR IV"},{"id":"IKS 38","tema":"S","name":"Indeks kecukupan ruang perkuliahan (%)","jenis":"IKP","baseline":"1,25","target":"1,3","b":1.25,"t":1.3,"dir":1,"qs":"–","the":"Teaching","gm":"✔","pic":"DirPPS"},{"id":"IKS 39","tema":"S","name":"Persentase keterlibatan perguruan tinggi dalam SDG 1 (Tanpa Kemiskinan), SDG 4 (Pendidikan Berkualitas), SDG 17 (Kemitraan), dan 2 (dua) SDGs lain sesuai keunggulan (IKU)","jenis":"IKU","baseline":"75%","target":"80%","b":75,"t":80,"dir":1,"qs":"Sustainability","the":"Impact (SDG 1, 4, 17 + 2 SDGs)","gm":"✔","pic":"WR IV, SEKITS (Unit SDGs & SEC)"},{"id":"IKS 40","tema":"S","name":"Peringkat PT pada THE Impact Ranking","jenis":"IKP","baseline":"201–300","target":"201–300","b":null,"t":null,"dir":-1,"qs":"Sustainability","the":"Impact (agregat SDGs)","gm":"✔","pic":"WR IV / DKG / KPM / SEKITS"},{"id":"IKS 41","tema":"S","name":"Peringkat UI GreenMetric","jenis":"IKP","baseline":"13","target":"12","b":13,"t":12,"dir":-1,"qs":"Sustainability","the":"Impact","gm":"✔","pic":"DPSP, SEKITS (Unit SDGs & SEC)"},{"id":"IKS 42","tema":"S","name":"Kapasitas energi terbarukan yang terpasang (kW)","jenis":"IKE","baseline":"437","target":"450","b":437,"t":450,"dir":1,"qs":"Sustainability","the":"Impact","gm":"✔","pic":"DPSP"},{"id":"IKS 43","tema":"S","name":"Jumlah nilai endowment fund kumulatif (dalam Rp miliar)","jenis":"IKE","baseline":"130","target":"170","b":130,"t":170,"dir":1,"qs":"–","the":"–","gm":"–","pic":"LPDA"},{"id":"IKS 44","tema":"E","name":"Persentase pendapatan/penghasilan dari bidang non-akademik (selain UKT/uang kuliah) (IKU)","jenis":"IKU","baseline":"–","target":"35,00%","b":null,"t":35,"dir":1,"qs":"–","the":"Industry","gm":"–","pic":"WR IV / DKPU"},{"id":"IKS 45","tema":"E","name":"Hasil audit atas Laporan Keuangan Perguruan Tinggi (IKU)","jenis":"IKU","baseline":"WTP","target":"WTP","b":null,"t":null,"dir":1,"qs":"–","the":"–","gm":"–","pic":"WR II (Biro Keuangan)"},{"id":"IKS 46","tema":"E","name":"Ketersediaan perencanaan strategis peningkatan kesejahteraan dosen (IKU)","jenis":"IKU","baseline":"–","target":"3","b":null,"t":3,"dir":1,"qs":"–","the":"–","gm":"–","pic":"DSDMO"},{"id":"IKS 47","tema":"E","name":"Persentase kenaikan aset netto terhadap total pendapatan","jenis":"IKP","baseline":"9,87%","target":"10%","b":9.87,"t":10,"dir":1,"qs":"–","the":"–","gm":"–","pic":"WR II, BMA"},{"id":"IKS 48","tema":"E","name":"Rasio jumlah dosen bergelar S3 / jumlah dosen","jenis":"IKE","baseline":"0,58","target":"0,59","b":0.58,"t":0.59,"dir":1,"qs":"Faculty Student Ratio (kualitas)","the":"Teaching, Research","gm":"–","pic":"DSDMO"},{"id":"IKS 49","tema":"E","name":"Rasio jumlah dosen / jumlah mahasiswa","jenis":"IKE","baseline":"1:27","target":"1:26","b":null,"t":null,"dir":1,"qs":"Faculty Student Ratio","the":"Teaching","gm":"–","pic":"DSDMO"},{"id":"IKS 50","tema":"E","name":"Jumlah tenaga kependidikan yang memiliki sertifikat pelatihan/kompetensi/profesi yang diakui oleh dunia usaha dan dunia industri","jenis":"IKP","baseline":"400","target":"420","b":400,"t":420,"dir":1,"qs":"–","the":"–","gm":"–","pic":"DSDMO"},{"id":"IKS 51","tema":"E","name":"Zona Integritas yang terdiri dari Wilayah Bebas dari Korupsi (WBK) dan Wilayah Birokrasi Bersih dan Melayani (WBBM) (IKU)","jenis":"IKU","baseline":"9 Unit Kerja","target":"9 Unit Kerja","b":null,"t":null,"dir":1,"qs":"–","the":"–","gm":"–","pic":"Sekits"},{"id":"IKS 52","tema":"E","name":"Predikat Sistem Akuntabilitas Kinerja Instansi Pemerintah (SAKIP) Perguruan Tinggi (IKU)","jenis":"IKU","baseline":"A","target":"AA","b":null,"t":null,"dir":1,"qs":"–","the":"–","gm":"–","pic":"Sekits"},{"id":"IKS 53","tema":"E","name":"Pencegahan dan Penanganan Pelanggaran Integritas Akademik (IKU)","jenis":"IKU","baseline":"0","target":"0","b":0,"t":0,"dir":1,"qs":"–","the":"–","gm":"–","pic":"Sekits"},{"id":"IKS 54","tema":"E","name":"Pencegahan dan Penanganan Anti Kekerasan; Anti Narkotika, Psikotropika dan Bahan Adiktif Berbahaya lainnya (narkoba); dan Anti Korupsi (IKU)","jenis":"IKU","baseline":"100%","target":"100%","b":100,"t":100,"dir":1,"qs":"–","the":"–","gm":"–","pic":"Sekits"},{"id":"IKS 55","tema":"E","name":"Nilai Kinerja Anggaran atas Pelaksanaan RKA-K/L (IKU)","jenis":"IKU","baseline":"87,5","target":"87,5","b":87.5,"t":87.5,"dir":1,"qs":"–","the":"–","gm":"–","pic":"WR II (Biro Keuangan)"},{"id":"IKS 56","tema":"E","name":"Skor Penilaian Good University Governance (GUG)","jenis":"IKP","baseline":"63,16%","target":"67,16%","b":63.16,"t":67.16,"dir":1,"qs":"–","the":"–","gm":"–","pic":"Sekits"},{"id":"IKS 57","tema":"E","name":"Persentase Service Level Agreement Uptime ICT","jenis":"IKP","baseline":"94%","target":"95%","b":94,"t":95,"dir":1,"qs":"–","the":"–","gm":"–","pic":"DPTSI"}],"GRP":[{"id":"G1","label":"Talenta – Angka Efisiensi Edukasi Perguruan Tinggi (AEE PT)","target":"Target IKU: 55,7%","pagu":520433536527,"pct":"21,77"},{"id":"G2","label":"Talenta – Persentase lulusan yang langsung bekerja, berwirausaha, atau melanjutkan studi dalam 1 tahun setelah kelulusan","target":"Target IKU: 80,00%","pagu":131324022579,"pct":"5,49"},{"id":"G3","label":"Talenta – Persentase mahasiswa program Diploma dan Sarjana yang berkegiatan/meraih prestasi di luar program studi","target":"Target IKU: 30,00%","pagu":25941796331,"pct":"1,09"},{"id":"G4","label":"Inovasi – Persentase luaran hasil kerja sama antara perguruan tinggi dengan industri/lembaga","target":"Target IKU: 5,00%","pagu":2855175000,"pct":"0,12"},{"id":"G5","label":"Inovasi – Persentase publikasi bereputasi internasional (Scopus/WoS) dan Rasio Jumlah Sitasi per Jumlah Dosen (IKU Partisipatif)","target":"Target IKU: 66% (publikasi); 130,20 (rasio sitasi per dosen)","pagu":339553853924,"pct":"14,20"},{"id":"G6","label":"Kontribusi/Dedikasi pada Masyarakat – Persentase keterlibatan PT dalam SDG 1, SDG 4, SDG 17, dan 2 SDGs lain sesuai keunggulan; serta Persentase SDM PT yang terlibat langsung dalam penyusunan kebijakan","target":"Target IKU: 80% (SDGs); 34% (SDM terlibat penyusunan kebijakan)","pagu":681159458549,"pct":"28,49"},{"id":"G7","label":"Tata Kelola Berintegritas – Persentase Pendapatan Non Pendidikan/UKT terhadap Total Pendapatan; Ketersediaan Perencanaan Strategis Peningkatan Kesejahteraan Dosen; dan Nilai Kinerja Anggaran atas Pelaksanaan RKA-K/L","target":"Target IKU: 35,00% (pendapatan non pendidikan/UKT); 3 dokumen (perencanaan kesejahteraan dosen); 87,5 (nilai kinerja anggaran RKA-K/L)","pagu":586143764371,"pct":"24,52"},{"id":"G8","label":"Tata Kelola Berintegritas – Opini WTP atas Laporan Keuangan Perguruan Tinggi dan Predikat SAKIP Perguruan Tinggi","target":"Target IKU: WTP; SAKIP AA","pagu":103105332821,"pct":"4,31"}],"RISIKO":[["IKU 1 – Angka Efisiensi Edukasi PT","Rendahnya efektivitas dan efisiensi penyelenggaraan edukasi serta ketidaksesuaian dengan standar mutu perguruan tinggi","Sangat Tinggi","Pelaksanaan siklus penjaminan mutu internal berbasis PPEPP (Penetapan, Pelaksanaan, Evaluasi, Pengendalian, dan Peningkatan) yang mengacu pada standar pendidikan tinggi","Tinggi"],["IKU 2 – Lulusan langsung bekerja/berwirausaha/melanjutkan studi","Rendahnya kompetensi dan daya saing lulusan ITS dalam memasuki dunia kerja dan pendidikan lanjutan","Sangat Tinggi","Pengembangan dan penyesuaian kurikulum yang adaptif serta penguatan kerja sama dengan dunia industri dan pemangku kepentingan","Sedang"],["IKU 3 – Mahasiswa berkegiatan/berprestasi di luar prodi","Belum optimalnya pengelolaan program pengembangan aktivitas dan prestasi mahasiswa lintas program studi","Sangat Tinggi","Perluasan akses dan pemerataan partisipasi mahasiswa (pembinaan lomba, keterlibatan riset, sosialisasi program/kompetisi), kerja sama departemen/prodi dengan industri, serta dukungan pendanaan yang memadai","Tinggi"],["IKU 4 – Luaran hasil kerja sama dan hilirisasi","Ketidaksesuaian luaran kerja sama yang dihasilkan terhadap kriteria substansi yang diakui dalam perhitungan IKU","Sangat Tinggi","Penyusunan pedoman teknis dan standardisasi luaran selaras kriteria IKU, penguatan pemantauan unsur riset/inovasi dan dampak sosial, pendaftaran/publikasi luaran pada lembaga dan sistem indeks yang diakui","Tinggi"],["IKU 5 – Publikasi bereputasi internasional","Rendahnya produktivitas dan kualitas riset dosen","Sangat Tinggi","Penyediaan program pendanaan riset yang terarah dan kompetitif serta penguatan kolaborasi riset internasional (joint research/co-authorship)","Sedang"],["IKU 7 – Keterlibatan PT dalam SDGs","Keterbatasan tata kelola institusi dalam memastikan integrasi dan keberlanjutan implementasi SDGs dalam Tridharma Perguruan Tinggi","Sangat Tinggi","Penyelarasan kegiatan pendidikan, penelitian, dan pengabdian masyarakat dengan target SDGs dalam dokumen perencanaan serta optimalisasi peran unit SDGs","Sedang"],["Pendapatan non pendidikan/UKT","Kurangnya efektivitas strategi pengembangan pendapatan non pendidikan/UKT untuk mendukung target institusi","Sangat Tinggi","Evaluasi dan perancangan strategi pendapatan non pendidikan/UKT melalui unit/anak usaha secara periodik","Tinggi"],["Opini WTP atas Laporan Keuangan","Terbatasnya efektivitas tata kelola dan pengendalian internal keuangan institusi","Sangat Tinggi","Peningkatan efektivitas kontrol preventif dan detektif seluruh siklus pengelolaan keuangan serta penguatan kompetensi dan pemahaman regulasi keuangan","Tinggi"],["Rasio sitasi publikasi internasional per dosen","Rendahnya dampak ilmiah (scientific impact) publikasi dosen, termasuk kurangnya pembaruan riset, relevansi global, dan visibilitas ilmiah","Sangat Tinggi","Penyediaan pendanaan riset terarah dan kompetitif serta arahan dan penyesuaian topik riset sesuai roadmap riset ITS","Tinggi"]],"FOKUS":[["Academic Reputation (QS, bobot 30%)","Visibilitas global terarah: host konferensi internasional, kolaborasi riset jangka panjang, keynote speaker, editor/reviewer jurnal, visiting professor dua arah, liputan media riset unggulan","WR IV, DKG, KPM, DRPM, Humas, Dekan","IKS 1, IKS 3, IKS 7, IKS 26, IKS 28, IKS 30"],["Citations per Faculty (QS, bobot 20%) & Research Quality (THE)","Publikasi Q1/top-tier, review article, kolaborasi peneliti highly-cited, research cluster tema prioritas, verifikasi Scopus ID, penambahan mahasiswa pascasarjana","DRPM, DirPPS, KPM, Dekan, Kadep, Perpustakaan","IKS 1, IKS 2, IKS 3, IKS 4, IKS 5, IKS 7"],["Employer Reputation (QS, bobot 15%) & Employment Outcomes (QS)","Tracer study, penempatan alumni global, kurikulum OBE, magang industri, kerja sama multinasional, dokumentasi impactful alumni","Dirmawa, Hub. Alumni, DKPU, DirPAIP","IKS 12, IKS 23"],["THE Impact & UI GreenMetric","Implementasi roadmap SDGs komprehensif, efisiensi energi-air, pengelolaan limbah, Net Zero 2030, dokumentasi bukti SDGs seluruh unit","DPSP, WR IV, DRPM, Sekits, SDGs&SEC, Dirmawa, seluruh fakultas","IKS 39, IKS 40, IKS 41, IKS 42"]],"QS_ID":"U13","GM_ID":null};
+/* ================= state & storage ================= */
+const BLANK = {tw:{1:{iku:{},iks:{},grp:{},man:{}},2:{iku:{},iks:{},grp:{},man:{}},3:{iku:{},iks:{},grp:{},man:{}},4:{iku:{},iks:{},grp:{},man:{}}},
+  prioritas:[], keputusan:[], catatan:{}, activeTW:1, page:'cockpit'};
+let S = JSON.parse(JSON.stringify(BLANK));
+let memOnly = false;
+let saveTimer=null;
+const hasLS = (()=>{ try{ localStorage.setItem('__t','1'); localStorage.removeItem('__t'); return true; }catch(e){ return false; } })();
+/* ---- raw storage backend (Claude artifact / localStorage) ---- */
+async function rawGet(k){
+  if(window.storage){ try{ const r=await window.storage.get(k); return r?r.value:null; }catch(e){ return null; } }
+  if(hasLS) return localStorage.getItem(k);
+  return null;
+}
+async function rawSet(k,v){
+  if(window.storage){ try{ await window.storage.set(k,v); return true; }catch(e){ return false; } }
+  if(hasLS){ localStorage.setItem(k,v); return true; }
+  return false;
+}
+async function rawDel(k){
+  if(window.storage){ try{ await window.storage.delete(k); }catch(e){} }
+  if(hasLS) localStorage.removeItem(k);
+}
+/* ---- crypto (WebCrypto AES-256-GCM, kunci diturunkan PBKDF2) ---- */
+const enc=new TextEncoder(), dec=new TextDecoder();
+const b64=b=>btoa(String.fromCharCode(...new Uint8Array(b)));
+const ub64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function deriveKey(pass,salt){
+  const km=await crypto.subtle.importKey('raw',enc.encode(pass),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:200000,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['wrapKey','unwrapKey']);
+}
+async function wrapDataKey(K,pass){
+  const salt=crypto.getRandomValues(new Uint8Array(16)), iv=crypto.getRandomValues(new Uint8Array(12));
+  const wk=await deriveKey(pass,salt);
+  const ct=await crypto.subtle.wrapKey('raw',K,wk,{name:'AES-GCM',iv});
+  return {salt:b64(salt),iv:b64(iv),ct:b64(ct)};
+}
+async function unwrapDataKey(w,pass){
+  const wk=await deriveKey(pass,ub64(w.salt));
+  return crypto.subtle.unwrapKey('raw',ub64(w.ct),wk,{name:'AES-GCM',iv:ub64(w.iv)},{name:'AES-GCM'},true,['encrypt','decrypt']);
+}
+async function encJSON(K,obj){
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},K,enc.encode(JSON.stringify(obj)));
+  return {iv:b64(iv),ct:b64(ct)};
+}
+async function decJSON(K,box){
+  const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:ub64(box.iv)},K,ub64(box.ct));
+  return JSON.parse(dec.decode(pt));
+}
+/* ---- session ---- */
+let KEY=null, ROLE=null, ENV=null; // ENV = {v:1,wraps:{admin,viewer},data:{iv,ct}}
+const KS='epcc-its-2026-secure';
+function applyState(d){
+  S = Object.assign(JSON.parse(JSON.stringify(BLANK)), d);
+  for(let t=1;t<=4;t++) S.tw[t] = Object.assign({iku:{},iks:{},grp:{},man:{}}, S.tw[t]||{});
+}
+async function loadEnvelope(){
+  const v=await rawGet(KS);
+  ENV = v? JSON.parse(v): null;
+}
+async function persistEnvelope(){
+  if(!KEY||ROLE!=='admin'){ return; } // viewer tidak menulis data bersama
+  ENV.data = await encJSON(KEY,S);
+  const ok = await rawSet(KS,JSON.stringify(ENV));
+  if(!ok) memOnly=true;
+}
+function save(){
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(async ()=>{
+    if(ROLE!=='admin'){ return; }
+    try{ await persistEnvelope(); flash(memOnly?'Mode memori (tanpa penyimpanan)':'Tersimpan terenkripsi ✓'); }
+    catch(e){ flash('Gagal menyimpan'); }
+  },500);
+}
+function flash(t){ const el=document.getElementById('savestate'); el.textContent=t; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),1400); }
+async function exportData(){
+  if(!KEY){ return; }
+  const env={v:1,type:'epcc-its-2026',wraps:ENV.wraps,data:await encJSON(KEY,S)};
+  const blob=new Blob([JSON.stringify(env)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='capaian-its-2026-tw'+S.activeTW+'.enc.json'; a.click();
+  flash('Diekspor terenkripsi ✓');
+}
+function importData(){ document.getElementById('importfile').click(); }
+document.getElementById('importfile').addEventListener('change',ev=>{
+  const f=ev.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=async ()=>{
+    try{
+      const j=JSON.parse(r.result);
+      if(j.type==='epcc-its-2026'&&j.data&&j.wraps){
+        // file terenkripsi: coba buka dengan kunci sesi; jika beda set kata sandi, minta kata sandi file
+        let k=KEY, d=null;
+        try{ d=await decJSON(k,j.data); }
+        catch(e){
+          const p=prompt('File ini dienkripsi dengan kata sandi berbeda.\nMasukkan kata sandi file (admin atau viewer):');
+          if(p==null)return;
+          try{ k=await unwrapDataKey(j.wraps.admin,p); }
+          catch(e2){ k=await unwrapDataKey(j.wraps.viewer,p); }
+          d=await decJSON(k,j.data);
+        }
+        applyState(d);
+      } else {
+        if(ROLE!=='admin'){ alert('Impor file lama (tanpa enkripsi) hanya untuk peran Input.'); return; }
+        applyState(j); // format lama tanpa enkripsi
+      }
+      if(ROLE==='admin') save();
+      render(); flash('Data diimpor ✓');
+    }catch(e){ alert('File tidak valid atau kata sandi salah.'); }
+  };
+  r.readAsText(f); ev.target.value='';
+});
+/* ---- login / setup UI ---- */
+function lockScreen(mode,msg){
+  let el=document.getElementById('lock');
+  if(!el){ el=document.createElement('div'); el.id='lock'; el.className='lock'; document.body.appendChild(el); }
+  if(mode==='setup'){
+    el.innerHTML='<div class="lockcard"><div class="eyebrow">ITS EPCC 2026 · Penyiapan Awal</div><h2>Buat Kata Sandi Akses</h2>'+
+    '<p>Data capaian akan dienkripsi (AES-256). Buat dua kata sandi: <b>Input</b> untuk pengisi data, dan <b>Pemantau</b> (baca-saja) untuk Rektor & para WR. Simpan baik-baik — <b>tidak ada pemulihan kata sandi</b>.</p>'+
+    '<label>Kata sandi Input (admin)</label><input type="password" id="sp1" autocomplete="new-password">'+
+    '<label>Ulangi kata sandi Input</label><input type="password" id="sp1b" autocomplete="new-password">'+
+    '<label>Kata sandi Pemantau (Rektor/WR, baca-saja)</label><input type="password" id="sp2" autocomplete="new-password">'+
+    '<button class="btn" onclick="doSetup()">Aktifkan & Masuk</button><div class="err" id="lerr">'+(msg||'')+'</div></div>';
+  } else {
+    el.innerHTML='<div class="lockcard"><div class="eyebrow">Institut Teknologi Sepuluh Nopember</div><h2>Executive Performance Command Center 2026</h2>'+
+    '<p>Masukkan kata sandi. Kata sandi <b>Input</b> membuka mode pengisian; kata sandi <b>Pemantau</b> membuka mode baca-saja untuk pimpinan.</p>'+
+    '<label>Kata sandi</label><input type="password" id="lp" autocomplete="current-password" onkeydown="if(event.key===\'Enter\')doLogin()">'+
+    '<button class="btn" onclick="doLogin()">Masuk</button><div class="err" id="lerr">'+(msg||'')+'</div>'+
+    '<div class="foot"><a onclick="resetAll()">Reset semua data & kata sandi</a></div></div>';
+  }
+  el.style.display='flex';
+  setTimeout(()=>{const i=el.querySelector('input'); if(i)i.focus();},50);
+}
+function unlock(){ const el=document.getElementById('lock'); if(el)el.style.display='none'; }
+window.doSetup=async ()=>{
+  const p1=document.getElementById('sp1').value, p1b=document.getElementById('sp1b').value, p2=document.getElementById('sp2').value;
+  const err=document.getElementById('lerr');
+  if(p1.length<6||p2.length<6){ err.textContent='Kata sandi minimal 6 karakter.'; return; }
+  if(p1!==p1b){ err.textContent='Kata sandi Input tidak sama.'; return; }
+  if(p1===p2){ err.textContent='Kata sandi Input dan Pemantau harus berbeda.'; return; }
+  const K=await crypto.subtle.generateKey({name:'AES-GCM',length:256},true,['encrypt','decrypt']);
+  ENV={v:1,type:'epcc-its-2026',wraps:{admin:await wrapDataKey(K,p1),viewer:await wrapDataKey(K,p2)},data:null};
+  KEY=K; ROLE='admin';
+  // migrasi data lama tanpa enkripsi jika ada
+  const old=await rawGet('epcc-its-2026');
+  if(old){ try{ applyState(JSON.parse(old)); }catch(e){} await rawDel('epcc-its-2026'); }
+  await persistEnvelope();
+  unlock(); render(); flash('Enkripsi aktif ✓');
+};
+window.doLogin=async ()=>{
+  const p=document.getElementById('lp').value, err=document.getElementById('lerr');
+  try{ KEY=await unwrapDataKey(ENV.wraps.admin,p); ROLE='admin'; }
+  catch(e){
+    try{ KEY=await unwrapDataKey(ENV.wraps.viewer,p); ROLE='viewer'; }
+    catch(e2){ err.textContent='Kata sandi salah.'; return; }
+  }
+  try{ if(ENV.data) applyState(await decJSON(KEY,ENV.data)); }catch(e){ err.textContent='Data rusak / tidak dapat dibuka.'; return; }
+  unlock(); render();
+};
+window.logout=()=>{ KEY=null; ROLE=null; S=JSON.parse(JSON.stringify(BLANK)); lockScreen('login'); };
+window.resetAll=async ()=>{
+  if(!confirm('Yakin? SELURUH data capaian dan kata sandi akan dihapus permanen dari perangkat ini.'))return;
+  await rawDel(KS); await rawDel('epcc-its-2026'); ENV=null; KEY=null; ROLE=null; S=JSON.parse(JSON.stringify(BLANK));
+  lockScreen('setup');
+};
+/* ================= helpers ================= */
+const fmtRp = n => n==null?'–':'Rp'+Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+const fmt1 = n => n==null?'–':(Math.round(n*100)/100).toString().replace('.',',');
+const pct = n => n==null?'–':(Math.round(n*10)/10).toString().replace('.',',')+'%';
+function num(s){ if(s==null)return null; s=String(s).trim().replace(/%/g,'').replace(/\s/g,'');
+  if(/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)) return parseFloat(s.replace(/\./g,'').replace(',','.'));
+  if(/^\d+(,\d+)?$/.test(s)) return parseFloat(s.replace(',','.'));
+  if(/^\d+(\.\d+)?$/.test(s)) return parseFloat(s);
+  return null; }
+function getVal(kind,id){ const v=S.tw[S.activeTW][kind][id]; return (v===''||v==null)?null:parseFloat(v); }
+function lastVal(kind,id){ for(let t=S.activeTW;t>=1;t--){ const v=S.tw[t][kind][id]; if(v!==''&&v!=null) return {v:parseFloat(v),t}; } return null; }
+function progress(ind,val){
+  const b=ind.b,t=ind.t;
+  if(val==null||t==null) return null;
+  if(ind.dir<0){
+    if(b==null||b<=t) return val<=t?1:Math.max(0,t/val);
+    return Math.min(1.3,Math.max(0,(b-val)/(b-t)));
+  }
+  if(b==null||t<=b) return Math.min(1.3,val/t);
+  return Math.min(1.3,Math.max(0,(val-b)/(t-b)));
+}
+function statusOf(ind,kind){
+  // manual override for non-numeric targets
+  if(ind.t==null){ const m=S.tw[S.activeTW].man[kind+':'+ind.id]; return m||null; }
+  const lv=lastVal(kind,ind.id); if(!lv) return null;
+  const p=progress(ind,lv.v); if(p==null) return null;
+  const expected=S.activeTW/4;
+  const r=p/expected;
+  return r>=0.9?'ok':(r>=0.6?'warn':'bad');
+}
+function grpStatus(g){
+  const lv=lastVal('grp',g.id); if(!lv) return null;
+  const p=lv.v/g.pagu; const expected=S.activeTW/4; const r=p/expected;
+  return r>=0.9?'ok':(r>=0.6?'warn':'bad');
+}
+function forecast(ind,kind){
+  const lv=lastVal(kind,ind.id); if(!lv||ind.t==null) return null;
+  const frac=lv.t/4, b=ind.b;
+  if(ind.dir<0){ if(b==null) return lv.v; return Math.max(0,b-(b-lv.v)/frac); }
+  if(b==null) return lv.v/frac;
+  return b+(lv.v-b)/frac;
+}
+function counts(list,kind){
+  const c={ok:0,warn:0,bad:0,na:0};
+  list.forEach(x=>{ const s=statusOf(x,kind); c[s||'na']++; });
+  return c;
+}
+const pillHtml = s => s?('<span class="pill '+s+'">'+({ok:'Hijau',warn:'Kuning',bad:'Merah'}[s])+'</span>'):'<span class="pill na">Belum diisi</span>';
+const lamp = s => '<span class="lamp '+(s||'na')+'"></span>';
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+/* ================= navigation ================= */
+const PAGES=[
+  {grp:'Command Center'},
+  {id:'cockpit', label:'⌂ Executive Cockpit'},
+  {id:'command', label:'⚑ Panel Aksi & Keputusan', badge:()=>redCount()},
+  {grp:'Input Data'},
+  {id:'input', label:'✎ Input Capaian'},
+  {grp:'Monitoring'},
+  {id:'iku', label:'IKU (23 indikator)'},
+  {id:'iks', label:'IKS (57 indikator)'},
+  {id:'anggaran', label:'Serapan Anggaran'},
+  {id:'peta', label:'Peta Kinerja & Ranking'},
+  {id:'risiko', label:'Panel Risiko'},
+  {grp:'Pelaporan'},
+  {id:'brief', label:'Executive Brief'},
+];
+function redCount(){
+  let n=0;
+  DATA.IKU.forEach(x=>{ if(statusOf(x,'iku')==='bad')n++; });
+  DATA.IKS.forEach(x=>{ if(statusOf(x,'iks')==='bad')n++; });
+  DATA.GRP.forEach(g=>{ if(grpStatus(g)==='bad')n++; });
+  return n;
+}
+function renderNav(){
+  const nav=document.getElementById('nav'); nav.innerHTML='';
+  PAGES.forEach(p=>{
+    if(ROLE==='viewer'&&(p.id==='input'||p.grp==='Input Data'))return;
+    if(p.grp){ const d=document.createElement('div'); d.className='grp'; d.textContent=p.grp; nav.appendChild(d); return; }
+    const b=document.createElement('button');
+    b.innerHTML=esc(p.label)+(p.badge&&p.badge()>0?'<span class="badge">'+p.badge()+'</span>':'');
+    if(S.page===p.id)b.classList.add('on');
+    b.onclick=()=>{S.page=p.id; save(); render();};
+    nav.appendChild(b);
+  });
+  const seg=document.getElementById('twseg'); seg.innerHTML='';
+  [1,2,3,4].forEach(t=>{
+    const b=document.createElement('button'); b.textContent='TW'+t;
+    if(S.activeTW===t)b.classList.add('on');
+    b.onclick=()=>{S.activeTW=t; save(); render();};
+    seg.appendChild(b);
+  });
+}
+/* ================= pages ================= */
+function render(){
+  if(ROLE==='viewer'&&S.page==='input') S.page='cockpit';
+  document.body.classList.toggle('ro',ROLE==='viewer');
+  renderNav();
+  document.getElementById('brandTotal').textContent=fmtRp(DATA.TOTAL).slice(2);
+  const rb=document.getElementById('roleBadge');
+  if(rb) rb.innerHTML = ROLE?('<span class="rolebadge '+ROLE+'">'+(ROLE==='admin'?'Mode Input':'Mode Pemantau — baca saja')+'</span>'):'';
+  const m=document.getElementById('main');
+  const fn={cockpit,command,input,iku:ikuPage,iks:iksPage,anggaran,peta,risiko:risikoPage,brief}[S.page]||cockpit;
+  m.innerHTML=fn();
+  bindInputs(m);
+}
+function head(title,extra){
+  return '<div class="pagehead"><h2>'+title+'</h2><div class="meta">Triwulan '+S.activeTW+' · 2026 '+(extra||'')+(memOnly?' · <b style="color:var(--bad)">mode tanpa penyimpanan</b>':'')+'</div></div>';
+}
+/* ---------- COCKPIT ---------- */
+function rankTile(label,kind,id){
+  const list = kind==='iku'?DATA.IKU:DATA.IKS;
+  const ind=list.find(x=>x.id===id);
+  if(!ind) return '';
+  const lv=lastVal(kind,ind.id);
+  const st=statusOf(ind,kind);
+  const gap=(lv&&ind.t!=null)?(ind.dir<0? lv.v-ind.t : ind.t-lv.v):null;
+  return '<div class="tile">'+lamp(st)+'<div class="tl">'+label+'</div><div class="tv">'+(lv?fmt1(lv.v):'–')+'</div><div class="ts">Target '+esc(ind.target)+(gap!=null?' · Gap '+fmt1(gap):'')+'</div></div>';
+}
+function cockpit(){
+  const tot=DATA.GRP.reduce((a,g)=>{const lv=lastVal('grp',g.id);return a+(lv?lv.v:0);},0);
+  const ser=tot/DATA.TOTAL*100, targetSer=S.activeTW*25;
+  const serSt = tot===0?null:(ser/targetSer>=0.9?'ok':ser/targetSer>=0.6?'warn':'bad');
+  const cu=counts(DATA.IKU,'iku'), cs=counts(DATA.IKS,'iks');
+  const ikuSt=cu.bad>0?'bad':cu.warn>0?'warn':(cu.ok>0?'ok':null);
+  const iksSt=cs.bad>0?'bad':cs.warn>0?'warn':(cs.ok>0?'ok':null);
+  let h=head('Executive Cockpit','· ringkasan 10 detik');
+  h+='<div class="cockpit">';
+  h+='<div class="tile">'+lamp(serSt)+'<div class="tl">Serapan RKAT</div><div class="tv">'+pct(ser)+'</div><div class="ts">'+fmtRp(tot)+' · target linear '+targetSer+'%</div></div>';
+  h+='<div class="tile">'+lamp(ikuSt)+'<div class="tl">IKU</div><div class="tv">'+cu.ok+'<span style="font-size:.8rem;font-weight:400">/'+DATA.IKU.length+' hijau</span></div><div class="ts">'+cu.warn+' kuning · '+cu.bad+' merah · '+cu.na+' belum diisi</div></div>';
+  h+='<div class="tile">'+lamp(iksSt)+'<div class="tl">IKS</div><div class="tv">'+cs.ok+'<span style="font-size:.8rem;font-weight:400">/'+DATA.IKS.length+' hijau</span></div><div class="ts">'+cs.warn+' kuning · '+cs.bad+' merah · '+cs.na+' belum diisi</div></div>';
+  h+=rankTile('QS WUR','iku',DATA.QS_ID)+rankTile('THE Impact','iku','U_THE')+rankTile('UI GreenMetric','iks','IKS 41');
+  h+='</div>';
+  // top prioritas & risk
+  h+='<div class="grid2">';
+  h+='<div class="card"><h3><span class="k">Panel 2</span>Top Prioritas Minggu Ini</h3>'+prioTable(true)+'</div>';
+  h+='<div class="card"><h3><span class="k">Panel 3</span>Top Strategic Risk (RKAT Subbab 2.5)</h3>'+riskMini()+'</div>';
+  h+='</div>';
+  // forecast
+  h+='<div class="card"><h3><span class="k">Panel 5</span>Forecast — proyeksi akhir tahun jika tren berlanjut</h3>'+forecastTable()+'</div>';
+  // decision mini
+  const open=S.keputusan.filter(k=>!k.done).length;
+  h+='<div class="card"><h3><span class="k">Panel 4</span>Keputusan Menunggu Pimpinan <span class="pill '+(open?'bad':'ok')+'">'+open+' terbuka</span></h3>'+decisionList(true)+'</div>';
+  return h;
+}
+function prioTable(mini){
+  if(!S.prioritas.length) return '<div class="empty">Belum ada prioritas. Tambahkan lewat halaman <b>Panel Aksi & Keputusan</b>.</div>';
+  let h='<table><tr><th>Prioritas</th><th>PIC</th><th>Deadline</th><th class="ctr">Status</th>'+(mini?'':'<th></th>')+'</tr>';
+  S.prioritas.forEach((p,i)=>{
+    h+='<tr><td>'+esc(p.judul)+'</td><td>'+esc(p.pic)+'</td><td>'+esc(p.deadline||'–')+'</td><td class="ctr">'+pillHtml(p.status)+'</td>';
+    if(!mini) h+='<td><button class="btn sm danger mut" onclick="delPrio('+i+')">Hapus</button></td>';
+    h+='</tr>';
+  });
+  return h+'</table>';
+}
+function riskMini(){
+  let h='<table><tr><th>Area / IKU</th><th class="ctr">Level Awal</th><th class="ctr">Residual</th></tr>';
+  DATA.RISIKO.forEach(r=>{ h+='<tr><td>'+esc(r[0])+'</td><td class="ctr"><span class="pill bad">'+esc(r[2])+'</span></td><td class="ctr"><span class="pill '+(r[4]==='Sedang'?'warn':'bad')+'">'+esc(r[4])+'</span></td></tr>'; });
+  return h+'</table><p class="help" style="margin-top:8px">Sembilan risiko utama RKAT 2026 — seluruhnya level <b>Sangat Tinggi</b> sebelum mitigasi. Detail pada halaman Panel Risiko.</p>';
+}
+function forecastTable(){
+  const rows=[];
+  const picks=[DATA.QS_ID].filter(Boolean).map(id=>DATA.IKU.find(x=>x.id===id)).filter(Boolean);
+  DATA.IKU.forEach(x=>{ if(!picks.includes(x)&&lastVal('iku',x.id)&&x.t!=null) rows.push(x); });
+  const all=picks.filter(x=>lastVal('iku',x.id)).concat(rows).slice(0,10);
+  if(!all.length) return '<div class="empty">Isi capaian IKU terlebih dahulu untuk melihat proyeksi.</div>';
+  let h='<table><tr><th>Indikator</th><th class="num">Baseline</th><th class="num">Capaian TW'+S.activeTW+'</th><th class="num">Proyeksi Akhir Tahun</th><th class="num">Target</th><th class="ctr">Prognosis</th></tr>';
+  all.forEach(x=>{
+    const lv=lastVal('iku',x.id), fc=forecast(x,'iku');
+    const hit = fc!=null && (x.dir<0? fc<=x.t : fc>=x.t);
+    h+='<tr><td>'+esc(x.name)+'</td><td class="num">'+esc(x.baseline)+'</td><td class="num">'+fmt1(lv.v)+'</td><td class="num"><b>'+fmt1(fc)+'</b></td><td class="num">'+esc(x.target)+'</td><td class="ctr">'+(fc==null?'<span class="pill na">–</span>':hit?'<span class="pill ok">Tercapai</span>':'<span class="pill bad">Berisiko</span>')+'</td></tr>';
+  });
+  return h+'</table><p class="help" style="margin-top:8px">Proyeksi linear sederhana: capaian dinormalisasi terhadap proporsi triwulan berjalan ('+(S.activeTW*25)+'% tahun).</p>';
+}
+/* ---------- COMMAND / DECISION ---------- */
+function command(){
+  let h=head('Panel Aksi & Keputusan','· Command Center');
+  // red/yellow indicators with drill-down
+  const items=[];
+  DATA.IKU.forEach(x=>{const s=statusOf(x,'iku'); if(s==='bad'||s==='warn')items.push({kind:'iku',ind:x,s});});
+  DATA.IKS.forEach(x=>{const s=statusOf(x,'iks'); if(s==='bad'||s==='warn')items.push({kind:'iks',ind:x,s});});
+  DATA.GRP.forEach(g=>{const s=grpStatus(g); if(s==='bad'||s==='warn')items.push({kind:'grp',ind:g,s});});
+  items.sort((a,b)=>(a.s==='bad'?0:1)-(b.s==='bad'?0:1));
+  h+='<div class="card"><h3><span class="k">Panel 7</span>Indikator Butuh Tindakan ('+items.length+')</h3>';
+  if(!items.length) h+='<div class="empty">Tidak ada indikator berstatus kuning/merah pada TW'+S.activeTW+'. 👍</div>';
+  else{
+    h+='<p class="help" style="margin-bottom:10px">Klik indikator merah/kuning: isi penyebab, PIC penanganan, rekomendasi, dan kebutuhan keputusan Rektor. Catatan tersimpan otomatis.</p>';
+    items.forEach(it=>{
+      const key=it.kind+':'+(it.ind.id), n=S.catatan[key]||{};
+      const nm = it.kind==='grp'? it.ind.label : it.ind.name;
+      const pic = it.kind==='iks'? it.ind.pic : (it.kind==='grp'?'—':'—');
+      h+='<div class="kpi-detail"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px"><b>'+esc((it.ind.id||'')+' — '+nm)+'</b>'+pillHtml(it.s)+'</div>';
+      h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+      h+='<label class="help">Penyebab<br><input type="text" style="width:100%" data-note="'+key+':penyebab" value="'+esc(n.penyebab||'')+'"></label>';
+      h+='<label class="help">PIC penanganan'+(it.kind==='iks'?' (default: '+esc(pic)+')':'')+'<br><input type="text" style="width:100%" data-note="'+key+':pic" value="'+esc(n.pic||'')+'"></label>';
+      h+='<label class="help">Rekomendasi<br><input type="text" style="width:100%" data-note="'+key+':rekom" value="'+esc(n.rekom||'')+'"></label>';
+      h+='<label class="help">Kebutuhan keputusan Rektor<br><input type="text" style="width:100%" data-note="'+key+':keputusan" value="'+esc(n.keputusan||'')+'"></label>';
+      h+='</div></div>';
+    });
+  }
+  h+='</div>';
+  // prioritas editor
+  h+='<div class="grid2">';
+  h+='<div class="card"><h3><span class="k">Panel 2</span>Top Prioritas Minggu Ini</h3>'+prioTable(false);
+  h+='<div class="mut" style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"><input type="text" id="pJudul" placeholder="Prioritas…" style="flex:2;min-width:150px"><input type="text" id="pPic" placeholder="PIC" style="flex:1;min-width:80px"><input type="date" id="pDl"><select id="pSt"><option value="ok">Hijau</option><option value="warn" selected>Kuning</option><option value="bad">Merah</option></select><button class="btn sm" onclick="addPrio()">Tambah</button></div></div>';
+  // decision editor
+  h+='<div class="card"><h3><span class="k">Panel 4</span>Decision Panel</h3>'+decisionList(false);
+  h+='<div class="mut" style="display:flex;gap:6px;margin-top:10px"><input type="text" id="kText" placeholder="Keputusan yang perlu diambil pimpinan…" style="flex:1"><button class="btn sm" onclick="addKep()">Tambah</button></div></div>';
+  h+='</div>';
+  return h;
+}
+function decisionList(mini){
+  if(!S.keputusan.length) return '<div class="empty">Belum ada butir keputusan.</div>';
+  let h='';
+  S.keputusan.forEach((k,i)=>{
+    h+='<div style="display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--line);font-size:.83rem">';
+    h+='<input type="checkbox" '+(k.done?'checked':'')+' onchange="toggleKep('+i+')">';
+    h+='<span style="flex:1;'+(k.done?'text-decoration:line-through;color:var(--mut)':'')+'">'+esc(k.text)+'</span>';
+    if(!mini) h+='<button class="btn sm danger mut" onclick="delKep('+i+')">✕</button>';
+    h+='</div>';
+  });
+  return h;
+}
+window.addPrio=()=>{ if(ROLE!=='admin')return; const j=document.getElementById('pJudul').value.trim(); if(!j)return;
+  S.prioritas.push({judul:j,pic:document.getElementById('pPic').value.trim(),deadline:document.getElementById('pDl').value,status:document.getElementById('pSt').value}); save(); render(); };
+window.delPrio=i=>{ if(ROLE!=='admin')return; S.prioritas.splice(i,1); save(); render(); };
+window.addKep=()=>{ if(ROLE!=='admin')return; const t=document.getElementById('kText').value.trim(); if(!t)return; S.keputusan.push({text:t,done:false}); save(); render(); };
+window.toggleKep=i=>{ if(ROLE!=='admin')return; S.keputusan[i].done=!S.keputusan[i].done; save(); render(); };
+window.delKep=i=>{ if(ROLE!=='admin')return; S.keputusan.splice(i,1); save(); render(); };
+/* ---------- INPUT ---------- */
+let inputTab='iku';
+function input(){
+  let h=head('Input Capaian — TW'+S.activeTW,'· form pengisian realisasi');
+  h+='<div class="subseg">'+['iku|IKU','iks|IKS','grp|Anggaran per Kelompok IKU'].map(s=>{const[k,l]=s.split('|');return '<button class="'+(inputTab===k?'on':'')+'" onclick="setInputTab(\''+k+'\')">'+l+'</button>';}).join('')+'</div>';
+  if(inputTab==='iku'){
+    h+='<p class="note">Isi nilai capaian kumulatif s.d. TW'+S.activeTW+'. Status dihitung otomatis terhadap target proporsional triwulan (kriteria Bab 8.4: ≥90% hijau, 60–89% kuning, <60% merah). Indikator bertarget non-numerik (mis. peringkat THE) memakai status manual.</p>';
+    h+='<div class="card"><table><tr><th>IKU</th><th>Indikator</th><th class="ctr">Satuan</th><th class="num">Baseline</th><th class="num">Target 2026</th><th class="num">Capaian TW'+S.activeTW+'</th><th class="ctr">Status</th></tr>';
+    DATA.IKU.forEach(x=>{
+      const v=S.tw[S.activeTW].iku[x.id]??'';
+      h+='<tr><td><b>'+esc(x.group)+'</b></td><td>'+esc(x.name)+'</td><td class="ctr">'+esc(x.satuan)+'</td><td class="num">'+esc(x.baseline)+'</td><td class="num"><b>'+esc(x.target)+'</b></td>';
+      h+='<td class="num"><input type="number" step="any" data-in="iku:'+x.id+'" value="'+esc(v)+'"></td>';
+      if(x.t==null){
+        const m=S.tw[S.activeTW].man['iku:'+x.id]||'';
+        h+='<td class="ctr"><select data-man="iku:'+x.id+'"><option value="">–</option><option value="ok"'+(m==='ok'?' selected':'')+'>Hijau</option><option value="warn"'+(m==='warn'?' selected':'')+'>Kuning</option><option value="bad"'+(m==='bad'?' selected':'')+'>Merah</option></select></td>';
+      } else h+='<td class="ctr">'+pillHtml(statusOf(x,'iku'))+'</td>';
+      h+='</tr>';
+    });
+    h+='</table></div>';
+  } else if(inputTab==='iks'){
+    h+='<p class="note">57 IKS sesuai Tabel 1.3/2.10 RKAT 2026. Nilai kumulatif s.d. triwulan berjalan.</p>';
+    h+='<div class="card"><table><tr><th>Kode</th><th>Indikator Kinerja Strategis</th><th class="ctr">Jenis</th><th class="num">Baseline</th><th class="num">Target</th><th class="num">Capaian</th><th class="ctr">Status</th></tr>';
+    DATA.IKS.forEach(x=>{
+      const v=S.tw[S.activeTW].iks[x.id]??'';
+      h+='<tr><td><b>'+esc(x.id)+'</b> <span class="help">('+esc(x.tema)+')</span></td><td>'+esc(x.name)+'</td><td class="ctr">'+esc(x.jenis)+'</td><td class="num">'+esc(x.baseline)+'</td><td class="num"><b>'+esc(x.target)+'</b></td>';
+      h+='<td class="num"><input type="number" step="any" data-in="iks:'+x.id+'" value="'+esc(v)+'"></td>';
+      if(x.t==null){
+        const m=S.tw[S.activeTW].man['iks:'+x.id]||'';
+        h+='<td class="ctr"><select data-man="iks:'+x.id+'"><option value="">–</option><option value="ok"'+(m==='ok'?' selected':'')+'>Hijau</option><option value="warn"'+(m==='warn'?' selected':'')+'>Kuning</option><option value="bad"'+(m==='bad'?' selected':'')+'>Merah</option></select></td>';
+      } else h+='<td class="ctr">'+pillHtml(statusOf(x,'iks'))+'</td>';
+      h+='</tr>';
+    });
+    h+='</table></div>';
+  } else {
+    h+='<p class="note">Isi realisasi anggaran kumulatif (Rp) per kelompok IKU sesuai Tabel 2.13 RKAT. Status dibanding target serapan linear '+(S.activeTW*25)+'%.</p>';
+    h+='<div class="card"><table><tr><th>Kelompok IKU</th><th class="num">Pagu (Rp)</th><th class="num">Realisasi s.d. TW'+S.activeTW+' (Rp)</th><th class="num">Serapan</th><th class="ctr">Status</th></tr>';
+    DATA.GRP.forEach(g=>{
+      const v=S.tw[S.activeTW].grp[g.id]??''; const lv=lastVal('grp',g.id);
+      h+='<tr><td><b>'+esc(g.label)+'</b><div class="help">'+esc(g.target)+'</div></td><td class="num">'+fmtRp(g.pagu)+'</td>';
+      h+='<td class="num"><input type="number" step="any" style="width:150px" data-in="grp:'+g.id+'" value="'+esc(v)+'"></td>';
+      h+='<td class="num">'+(lv?pct(lv.v/g.pagu*100):'–')+'</td><td class="ctr">'+pillHtml(grpStatus(g))+'</td></tr>';
+    });
+    const tot=DATA.GRP.reduce((a,g)=>{const lv=lastVal('grp',g.id);return a+(lv?lv.v:0);},0);
+    h+='<tr><td><b>TOTAL</b></td><td class="num"><b>'+fmtRp(DATA.TOTAL)+'</b></td><td class="num"><b>'+fmtRp(tot)+'</b></td><td class="num"><b>'+pct(tot/DATA.TOTAL*100)+'</b></td><td></td></tr>';
+    h+='</table></div>';
+  }
+  return h;
+}
+window.setInputTab=k=>{inputTab=k;render();};
+/* ---------- IKU MONITOR ---------- */
+function ikuPage(){
+  let h=head('Monitoring IKU','· 23 indikator (Tabel 1 dokumen perencanaan)');
+  const c=counts(DATA.IKU,'iku');
+  h+='<div class="cockpit" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr))">';
+  [['Hijau',c.ok,'ok'],['Kuning',c.warn,'warn'],['Merah',c.bad,'bad'],['Belum diisi',c.na,'na']].forEach(x=>{
+    h+='<div class="tile">'+lamp(x[2]==='na'?null:x[2])+'<div class="tl">'+x[0]+'</div><div class="tv">'+x[1]+'</div></div>';});
+  h+='</div><div class="card"><table><tr><th>Sasaran</th><th>IKU</th><th>Indikator</th><th class="num">Baseline</th><th class="num">Target</th><th class="num">Capaian</th><th>Progres thd Target</th><th class="ctr">Status</th><th class="num">Proyeksi</th></tr>';
+  DATA.IKU.forEach(x=>{
+    const lv=lastVal('iku',x.id); const p=lv?progress(x,lv.v):null; const fc=forecast(x,'iku'); const s=statusOf(x,'iku');
+    h+='<tr><td>'+esc(x.sasaran)+'</td><td><b>'+esc(x.group)+'</b></td><td>'+esc(x.name)+'</td><td class="num">'+esc(x.baseline)+'</td><td class="num"><b>'+esc(x.target)+'</b></td><td class="num">'+(lv?fmt1(lv.v):'–')+'</td>';
+    h+='<td><div class="bar"><i class="'+(s||'ok')+'" style="width:'+(p==null?0:Math.min(100,p*100))+'%"></i></div><span class="help">'+(p==null?'':pct(p*100))+'</span></td>';
+    h+='<td class="ctr">'+pillHtml(s)+'</td><td class="num">'+(fc==null?'–':fmt1(fc))+'</td></tr>';
+  });
+  return h+'</table></div>';
+}
+/* ---------- IKS MONITOR ---------- */
+let iksFilterTema='all', iksFilterSt='all';
+function iksPage(){
+  let h=head('Monitoring IKS','· 57 indikator, tema RAISE');
+  const c=counts(DATA.IKS,'iks');
+  h+='<div class="cockpit" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr))">';
+  [['Hijau',c.ok,'ok'],['Kuning',c.warn,'warn'],['Merah',c.bad,'bad'],['Belum diisi',c.na,'na']].forEach(x=>{
+    h+='<div class="tile">'+lamp(x[2]==='na'?null:x[2])+'<div class="tl">'+x[0]+'</div><div class="tv">'+x[1]+'</div></div>';});
+  h+='</div><div class="filters">Tema: ';
+  ['all','R','A','I','S','E'].forEach(t=>{ h+='<button class="chip '+(iksFilterTema===t?'on':'')+'" onclick="setIksTema(\''+t+'\')">'+(t==='all'?'Semua':t)+'</button>'; });
+  h+='&nbsp;&nbsp;Status: ';
+  [['all','Semua'],['ok','Hijau'],['warn','Kuning'],['bad','Merah'],['na','Belum diisi']].forEach(x=>{ h+='<button class="chip '+(iksFilterSt===x[0]?'on':'')+'" onclick="setIksSt(\''+x[0]+'\')">'+x[1]+'</button>'; });
+  h+='</div><div class="card"><table><tr><th>Kode</th><th>Indikator</th><th class="ctr">Jenis</th><th class="num">Baseline</th><th class="num">Target</th><th class="num">Capaian</th><th class="ctr">Status</th><th>PIC</th><th>Ranking Terkait</th></tr>';
+  DATA.IKS.forEach(x=>{
+    const s=statusOf(x,'iks');
+    if(iksFilterTema!=='all'&&x.tema!==iksFilterTema)return;
+    if(iksFilterSt!=='all'&&(s||'na')!==iksFilterSt)return;
+    const lv=lastVal('iks',x.id);
+    const rank=[x.qs&&x.qs!=='–'?'QS: '+x.qs:null, x.the&&x.the!=='–'?'THE: '+x.the:null, x.gm==='✓'?'GreenMetric':null].filter(Boolean).join(' · ')||'–';
+    h+='<tr><td><b>'+esc(x.id)+'</b> <span class="help">'+esc(x.tema)+'</span></td><td>'+esc(x.name)+'</td><td class="ctr">'+esc(x.jenis)+'</td><td class="num">'+esc(x.baseline)+'</td><td class="num"><b>'+esc(x.target)+'</b></td><td class="num">'+(lv?fmt1(lv.v):'–')+'</td><td class="ctr">'+pillHtml(s)+'</td><td><b>'+esc(x.pic)+'</b></td><td class="help">'+esc(rank)+'</td></tr>';
+  });
+  return h+'</table></div>';
+}
+window.setIksTema=t=>{iksFilterTema=t;render();};
+window.setIksSt=t=>{iksFilterSt=t;render();};
+/* ---------- ANGGARAN ---------- */
+function anggaran(){
+  let h=head('Serapan Anggaran per Kelompok IKU','· Tabel 2.13 RKAT · pagu total '+fmtRp(DATA.TOTAL));
+  const tot=DATA.GRP.reduce((a,g)=>{const lv=lastVal('grp',g.id);return a+(lv?lv.v:0);},0);
+  h+='<div class="cockpit" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">';
+  h+='<div class="tile"><div class="tl">Total Realisasi</div><div class="tv">'+pct(tot/DATA.TOTAL*100)+'</div><div class="ts">'+fmtRp(tot)+'</div></div>';
+  h+='<div class="tile"><div class="tl">Target Linear TW'+S.activeTW+'</div><div class="tv">'+(S.activeTW*25)+'%</div><div class="ts">'+fmtRp(DATA.TOTAL*S.activeTW/4)+'</div></div>';
+  h+='<div class="tile"><div class="tl">Sisa Pagu</div><div class="tv">'+pct((1-tot/DATA.TOTAL)*100)+'</div><div class="ts">'+fmtRp(DATA.TOTAL-tot)+'</div></div>';
+  h+='</div><div class="card"><table><tr><th>Kelompok IKU</th><th class="num">Pagu</th><th class="num">% Pagu</th><th class="num">Realisasi</th><th>Serapan</th><th class="ctr">Status</th></tr>';
+  DATA.GRP.forEach(g=>{
+    const lv=lastVal('grp',g.id); const p=lv?lv.v/g.pagu:null; const s=grpStatus(g);
+    h+='<tr><td><b>'+esc(g.label)+'</b><div class="help">'+esc(g.target)+'</div></td><td class="num">'+fmtRp(g.pagu)+'</td><td class="num">'+esc(g.pct)+'%</td><td class="num">'+(lv?fmtRp(lv.v):'–')+'</td>';
+    h+='<td><div class="bar" style="min-width:110px"><i class="'+(s||'ok')+'" style="width:'+(p==null?0:Math.min(100,p*100))+'%"></i></div><span class="help">'+(p==null?'':pct(p*100))+'</span></td><td class="ctr">'+pillHtml(s)+'</td></tr>';
+  });
+  return h+'</table></div>';
+}
+/* ---------- PETA KINERJA ---------- */
+let petaSel='';
+function peta(){
+  let h=head('Peta Kinerja & Sinergi Pemeringkatan','· Panel 6: Performance Map (Bab 7 dokumen perencanaan)');
+  h+='<div class="card"><h3><span class="k">Panel 6</span>Telusuri keterkaitan IKS → Ranking → PIC</h3>';
+  h+='<select id="petaSel" onchange="setPeta(this.value)" style="max-width:640px;width:100%"><option value="">— pilih IKS —</option>';
+  DATA.IKS.forEach(x=>{ h+='<option value="'+x.id+'"'+(petaSel===x.id?' selected':'')+'>'+esc(x.id+' · '+x.name)+'</option>'; });
+  h+='</select>';
+  if(petaSel){
+    const x=DATA.IKS.find(i=>i.id===petaSel);
+    const s=statusOf(x,'iks'); const lv=lastVal('iks',x.id);
+    h+='<div class="kpi-detail" style="margin-top:14px"><div class="flow">';
+    h+='<span class="node hd">'+esc(x.id)+'</span><span class="arr">→</span>';
+    if(x.qs&&x.qs!=='–')h+='<span class="node">QS: '+esc(x.qs)+'</span>';
+    if(x.the&&x.the!=='–')h+='<span class="node">THE: '+esc(x.the)+'</span>';
+    if(x.gm==='✓')h+='<span class="node">UI GreenMetric</span>';
+    if((!x.qs||x.qs==='–')&&(!x.the||x.the==='–')&&x.gm!=='✓')h+='<span class="node">— tidak terpetakan ke ranking —</span>';
+    h+='<span class="arr">→</span><span class="node hd">PIC: '+esc(x.pic)+'</span></div>';
+    h+='<div style="margin-top:10px;font-size:.82rem"><b>'+esc(x.name)+'</b> ('+esc(x.jenis)+', tema '+esc(x.tema)+')<br>Baseline '+esc(x.baseline)+' → Target <b>'+esc(x.target)+'</b> · Capaian TW'+S.activeTW+': <b>'+(lv?fmt1(lv.v):'belum diisi')+'</b> '+pillHtml(s)+'</div></div>';
+  }
+  h+='</div>';
+  h+='<div class="card"><h3>Empat Fokus Intervensi Berdampak Terbesar (Bab 7.2)</h3><table><tr><th>Indikator Prioritas</th><th>Strategi Intervensi</th><th>Unit Bersinergi</th><th>IKS Terkait</th></tr>';
+  DATA.FOKUS.forEach(f=>{ h+='<tr><td><b>'+esc(f[0])+'</b></td><td>'+esc(f[1])+'</td><td>'+esc(f[2])+'</td><td>'+esc(f[3])+'</td></tr>'; });
+  h+='</table></div>';
+  h+='<div class="card"><h3>Pemetaan Lengkap 57 IKS (Bab 7.1)</h3><table><tr><th>Kode</th><th>IKS</th><th>QS WUR</th><th>THE</th><th class="ctr">GreenMetric</th><th>PIC</th><th class="ctr">Status TW'+S.activeTW+'</th></tr>';
+  DATA.IKS.forEach(x=>{ h+='<tr><td><b>'+esc(x.id)+'</b></td><td>'+esc(x.name)+'</td><td>'+esc(x.qs)+'</td><td>'+esc(x.the)+'</td><td class="ctr">'+esc(x.gm)+'</td><td><b>'+esc(x.pic)+'</b></td><td class="ctr">'+pillHtml(statusOf(x,'iks'))+'</td></tr>'; });
+  return h+'</table></div>';
+}
+window.setPeta=v=>{petaSel=v;render();};
+/* ---------- RISIKO ---------- */
+function risikoPage(){
+  let h=head('Panel Risiko','· Kajian Risiko RKAT 2026 Subbab 2.5 & Lampiran 2');
+  h+='<p class="note">Sembilan risiko utama seluruhnya berlevel <b>Sangat Tinggi</b> sebelum mitigasi. Skala: very low (1–2), low (3–4), medium (5–8), high (9–12), extreme (15–25).</p>';
+  h+='<div class="card"><table><tr><th>Area / IKU Terkait</th><th>Uraian Risiko</th><th class="ctr">Level</th><th>Strategi Mitigasi</th><th class="ctr">Residual</th></tr>';
+  DATA.RISIKO.forEach(r=>{
+    h+='<tr><td><b>'+esc(r[0])+'</b></td><td>'+esc(r[1])+'</td><td class="ctr"><span class="pill bad">'+esc(r[2])+'</span></td><td>'+esc(r[3])+'</td><td class="ctr"><span class="pill '+(r[4]==='Sedang'?'warn':'bad')+'">'+esc(r[4])+'</span></td></tr>';
+  });
+  h+='</table></div>';
+  h+='<div class="card"><h3>Program Dominan — Pengawasan Intensif (Bab 8.5)</h3><table><tr><th>Program Teknis</th><th class="num">Porsi Anggaran</th></tr>';
+  [['Peningkatan kesejahteraan SDM','24,80%'],['Penguatan tata kelola pelaksanaan kerjasama industri','22,45%'],['Peningkatan pendanaan riset yang kompetitif','16,72%'],['Penguatan fasilitas pendukung akademik','15,41%']].forEach(r=>{
+    h+='<tr><td>'+r[0]+'</td><td class="num"><b>'+r[1]+'</b></td></tr>';});
+  return h+'</table></div>';
+}
+/* ---------- BRIEF ---------- */
+function brief(){
+  const tot=DATA.GRP.reduce((a,g)=>{const lv=lastVal('grp',g.id);return a+(lv?lv.v:0);},0);
+  const cu=counts(DATA.IKU,'iku'), cs=counts(DATA.IKS,'iks');
+  const now=new Date().toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const reds=[]; DATA.IKU.forEach(x=>{if(statusOf(x,'iku')==='bad')reds.push(x.group+' — '+x.name);});
+  DATA.IKS.forEach(x=>{if(statusOf(x,'iks')==='bad')reds.push(x.id+' — '+x.name);});
+  const fcMiss=[]; DATA.IKU.forEach(x=>{const fc=forecast(x,'iku'); if(fc!=null&&x.t!=null&&!(x.dir<0?fc<=x.t:fc>=x.t))fcMiss.push(x.name+' (proyeksi '+fmt1(fc)+' vs target '+x.target+')');});
+  let h=head('Executive Brief','· Panel 8')+'<p class="note noprint">Ringkasan dua halaman otomatis. Klik <b>Cetak / PDF</b> untuk menghasilkan dokumen brief mingguan.</p>';
+  h+='<button class="btn noprint" style="margin-bottom:14px" onclick="window.print()">🖨 Cetak / PDF</button>';
+  h+='<div class="brief"><h2>Executive Brief — Kinerja ITS 2026</h2><div class="bmeta">Triwulan '+S.activeTW+' · dihasilkan '+now+' · ITS Executive Performance Command Center</div>';
+  h+='<h4>1 · Ringkasan Eksekutif</h4><ul>';
+  h+='<li>Serapan RKAT: <b>'+pct(tot/DATA.TOTAL*100)+'</b> ('+fmtRp(tot)+' dari pagu '+fmtRp(DATA.TOTAL)+'); target linear TW'+S.activeTW+' adalah '+(S.activeTW*25)+'%.</li>';
+  h+='<li>IKU: <b>'+cu.ok+' hijau</b>, '+cu.warn+' kuning, '+cu.bad+' merah dari '+DATA.IKU.length+' indikator ('+cu.na+' belum diisi).</li>';
+  h+='<li>IKS: <b>'+cs.ok+' hijau</b>, '+cs.warn+' kuning, '+cs.bad+' merah dari '+DATA.IKS.length+' indikator ('+cs.na+' belum diisi).</li></ul>';
+  h+='<h4>2 · Indikator Merah (butuh keputusan)</h4>'+(reds.length?'<ul>'+reds.map(r=>'<li>'+esc(r)+'</li>').join('')+'</ul>':'<p class="help">Tidak ada indikator merah.</p>');
+  h+='<h4>3 · Prognosis Berisiko Tidak Tercapai</h4>'+(fcMiss.length?'<ul>'+fcMiss.map(r=>'<li>'+esc(r)+'</li>').join('')+'</ul>':'<p class="help">Seluruh proyeksi indikator terisi berada pada jalur target.</p>');
+  h+='<h4>4 · Prioritas Minggu Ini</h4>'+(S.prioritas.length?'<ul>'+S.prioritas.map(p=>'<li>'+esc(p.judul)+' — PIC '+esc(p.pic||'–')+(p.deadline?', tenggat '+esc(p.deadline):'')+'</li>').join('')+'</ul>':'<p class="help">Belum ada butir prioritas.</p>');
+  h+='<h4>5 · Keputusan Menunggu Pimpinan</h4>'+(S.keputusan.filter(k=>!k.done).length?'<ul>'+S.keputusan.filter(k=>!k.done).map(k=>'<li>☐ '+esc(k.text)+'</li>').join('')+'</ul>':'<p class="help">Tidak ada keputusan terbuka.</p>');
+  h+='<h4>6 · Catatan Risiko</h4><ul><li>Sembilan risiko RKAT (level Sangat Tinggi) tetap dipantau; fokus pengawasan pada empat program dominan: kesejahteraan SDM (24,80%), kerjasama industri (22,45%), pendanaan riset (16,72%), fasilitas akademik (15,41%).</li></ul>';
+  h+='</div>';
+  return h;
+}
+/* ---------- input binding ---------- */
+function bindInputs(root){
+  if(ROLE!=='admin') return; // viewer: baca saja
+  root.querySelectorAll('[data-in]').forEach(el=>{
+    el.addEventListener('change',()=>{
+      const [kind,id]=el.dataset.in.split(/:(.+)/);
+      S.tw[S.activeTW][kind][id]=el.value;
+      save();
+      // refresh status pills without full rerender for smoother typing: full render is fine on change
+      render();
+    });
+  });
+  root.querySelectorAll('[data-man]').forEach(el=>{
+    el.addEventListener('change',()=>{
+      const key=el.dataset.man;
+      S.tw[S.activeTW].man[key]=el.value;
+      save(); render();
+    });
+  });
+  root.querySelectorAll('[data-note]').forEach(el=>{
+    el.addEventListener('change',()=>{
+      const parts=el.dataset.note.split(':'); const field=parts.pop(); const key=parts.join(':');
+      S.catatan[key]=S.catatan[key]||{}; S.catatan[key][field]=el.value; save();
+    });
+  });
+}
+/* ---------- boot ---------- */
+(async ()=>{
+  if(!window.crypto||!crypto.subtle){
+    document.body.innerHTML='<div style="padding:40px;font-family:sans-serif">Browser tidak mendukung Web Crypto. Buka lewat HTTPS (atau file lokal) dengan browser modern.</div>';
+    return;
+  }
+  await loadEnvelope();
+  render();
+  lockScreen(ENV?'login':'setup');
+})();
+</script>
+</body>
+</html>
